@@ -31,3 +31,9 @@ Build
 ```bash
 docker buildx build --platform linux/arm -t jmb12686/elasticsearch:latest --push .
 ```
+
+## How to Run
+
+```bash
+sudo docker run --rm -e "ES_JAVA_OPTS=-Xmx256m -Xms256m" -e "discovery.type=single-node" -v /home/pi/raspi-docker-stacks/elk/elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml jmb12686/elasticsearch
+```

@@ -21,12 +21,12 @@ RUN groupadd -g 1000 elasticsearch &&     adduser -u 1000 -g 1000 -d /usr/share/
 WORKDIR /usr/share/elasticsearch
 
 RUN cd /opt && curl --retry 8 -s -L -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-${VERSION}-no-jdk-linux-x86_64.tar.gz -# && cd -
-RUN cd /opt && curl --retry 8 -s -L -O https://github.com/AdoptOpenJDK/openjdk13-binaries/releases/download/jdk-13.0.1+9/OpenJDK13U-jdk_aarch64_linux_hotspot_13.0.1_9.tar.gz && cd -
+RUN cd /opt && curl --retry 8 -s -L -O https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.6%2B10/OpenJDK11U-jdk_arm_linux_hotspot_11.0.6_10.tar.gz && cd -
 
 RUN tar zxf /opt/elasticsearch-${VERSION}-no-jdk-linux-x86_64.tar.gz --strip-components=1
 # RUN rm -rf /usr/share/elasticsearch/jdk/*
 RUN mkdir jdk
-RUN tar zxf /opt/OpenJDK13U-jdk_aarch64_linux_hotspot_13.0.1_9.tar.gz -C jdk --strip-components=1
+RUN tar zxf /opt/OpenJDK11U-jdk_arm_linux_hotspot_11.0.6_10.tar.gz -C jdk --strip-components=1
 
 RUN rm -rf /usr/share/elasticsearch/jdk/lib/src.zip && rm -rf /usr/share/elasticsearch/jdk/demo
 
@@ -48,6 +48,7 @@ ENV ELASTIC_CONTAINER true
 RUN for iter in {1..10}; \
     do \
 		  apt update  -y && apt install -y  netcat \
+		  && apt install -y dos2unix \
 		  && apt autoremove -y && apt clean && exit_code=0 \
 		  && break || exit_code=$? \
 		  && echo "apt error: retry $iter in 10s" \
