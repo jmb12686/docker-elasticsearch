@@ -72,7 +72,8 @@ COPY --chown=1000:0 bin/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 # REF: https://github.com/elastic/elasticsearch-docker/issues/171
 
 RUN chgrp 0 /usr/local/bin/docker-entrypoint.sh && chmod g=u /etc/passwd && chmod 0775 /usr/local/bin/docker-entrypoint.sh \
-    && ln -sf /etc/pki/ca-trust/extracted/java/cacerts /usr/share/elasticsearch/jdk/lib/security/cacerts
+    && dos2unix /usr/local/bin/docker-entrypoint.sh \
+	&& ln -sf /etc/pki/ca-trust/extracted/java/cacerts /usr/share/elasticsearch/jdk/lib/security/cacerts
 
 EXPOSE 9200 9300
 
