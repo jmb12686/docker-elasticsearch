@@ -25,6 +25,7 @@ RUN cd /opt && curl --retry 8 -s -L -O https://github.com/AdoptOpenJDK/openjdk13
 
 RUN tar zxf /opt/elasticsearch-${VERSION}-no-jdk-linux-x86_64.tar.gz --strip-components=1
 # RUN rm -rf /usr/share/elasticsearch/jdk/*
+RUN mkdir jdk
 RUN tar zxf /opt/OpenJDK13U-jdk_aarch64_linux_hotspot_13.0.1_9.tar.gz -C jdk --strip-components=1
 
 RUN rm -rf /usr/share/elasticsearch/jdk/lib/src.zip && rm -rf /usr/share/elasticsearch/jdk/demo
@@ -32,8 +33,7 @@ RUN rm -rf /usr/share/elasticsearch/jdk/lib/src.zip && rm -rf /usr/share/elastic
 RUN grep ES_DISTRIBUTION_TYPE=tar /usr/share/elasticsearch/bin/elasticsearch-env     && sed -ie 's/ES_DISTRIBUTION_TYPE=tar/ES_DISTRIBUTION_TYPE=docker/' /usr/share/elasticsearch/bin/elasticsearch-env
 RUN mkdir -p config data logs
 RUN chmod 0775 config data logs
-COPY config/elasticsearch.yml config/log4j2.properties config/
-RUN echo "xpack.ml.enabled: false" >> config/elasticsearch.yml 
+COPY config/log4j2.properties config/
 
 ################################################################################
 # Build stage 1 (the actual elasticsearch image):
