@@ -1,0 +1,87 @@
+name: build
+
+on:
+  pull_request:
+    branches: 'master'
+  push:
+    branches: 'master'
+    tags: '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Prepare
+        id: prepare
+        run: |
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            TAG=${GITHUB_REF#refs/tags/}
+            echo ::set-output name=tag_name::${TAG}
+            echo ::set-output name=version::${TAG%-*}
+          else
+            echo ::set-output name=version::snapshot
+          fi
+          echo ::set-output name=build_date::$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          echo ::set-output name=docker_platforms::linux/arm
+          echo ::set-output name=docker_username::jmb12686
+          echo ::set-output name=docker_image::jmb12686/elasticsearch
+      -
+        # https://github.com/crazy-max/ghaction-docker-buildx
+        # sha = https://github.com/crazy-max/ghaction-docker-buildx/releases/tag/v1.0.4
+        name: Set up Docker Buildx
+        uses: crazy-max/ghaction-docker-buildx@e193644d92840c3a0d2a80093feff3a0d8d64e7e
+        with:
+          version: latest
+      -
+        # https://github.com/actions/checkout
+        name: Checkout
+        uses: actions/checkout@v1
+      -
+        name: Docker Buildx (no push)
+        run: |
+          docker buildx build --platform ${{ steps.prepare.outputs.docker_platforms }} \
+            --output "type=image,push=false" \
+            --build-arg "BUILD_DATE=${{ steps.prepare.outputs.build_date }}" \
+            --build-arg "VCS_REF=${GITHUB_SHA::8}" \
+            --build-arg "VERSION=${{ steps.prepare.outputs.version }}" \
+            --tag "${{ steps.prepare.outputs.docker_image }}:latest" \
+            --tag "${{ steps.prepare.outputs.docker_image }}:${{ steps.prepare.outputs.version }}" \
+            --file Dockerfile .
+      -
+        name: Docker Login
+        if: success() && startsWith(github.ref, 'refs/tags/')
+        env:
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          echo "${DOCKER_PASSWORD}" | docker login --username "${{ steps.prepare.outputs.docker_username }}" --password-stdin
+      -
+        name: Docker Buildx (push)
+        if: success() && startsWith(github.ref, 'refs/tags/')
+        run: |
+          docker buildx build --platform ${{ steps.prepare.outputs.docker_platforms }} \
+            --output "type=image,push=true" \
+            --build-arg "BUILD_DATE=${{ steps.prepare.outputs.build_date }}" \
+            --build-arg "VCS_REF=${GITHUB_SHA::8}" \
+            --build-arg "VERSION=${{ steps.prepare.outputs.version }}" \
+            --tag "${{ steps.prepare.outputs.docker_image }}:${{ steps.prepare.outputs.version }}" \
+            --tag "${{ steps.prepare.outputs.docker_image }}:latest" \
+            --file Dockerfile .
+#      -
+#        name: Docker Hub Description
+#        if: success() && startsWith(github.ref, 'refs/tags/')        
+#        uses: peter-evans/dockerhub-description@v2.1.0
+#        env:
+#          DOCKERHUB_USERNAME: ${{ steps.prepare.outputs.docker_username }}
+#          DOCKERHUB_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+#          DOCKERHUB_REPOSITORY: ${{ steps.prepare.outputs.docker_image }}
+      -
+        name: Docker Check Manifest
+        if: always() && startsWith(github.ref, 'refs/tags/')
+        run: |
+          docker run --rm mplatform/mquery ${{ steps.prepare.outputs.docker_image }}:${{ steps.prepare.outputs.version }}
+      -
+        name: Clear
+        if: always() && startsWith(github.ref, 'refs/tags/')
+        run: |
+          rm -f ${HOME}/.docker/config.json

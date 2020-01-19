@@ -43,6 +43,31 @@ COPY config/log4j2.properties config/
 
 FROM debian
 
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION
+
+LABEL maintainer="John Belisle" \
+  org.label-schema.build-date=$BUILD_DATE \
+  org.label-schema.name="elasticsearch" \
+  org.label-schema.description="Containerized, ARM version of elasticsearch.  Compatible with all Raspberry Pi models (armv6 + armv7) and linux/amd64." \
+  org.label-schema.version=$VERSION \
+  org.label-schema.url="https://github.com/jmb12686/docker-elasticsearch" \
+  org.label-schema.vcs-ref=$VCS_REF \
+  org.label-schema.vcs-url="https://github.com/jmb12686/docker-elasticsearch" \
+  org.label-schema.vendor="jmb12686" \
+  org.label-schema.schema-version="1.0" \
+  org.label-schema.docker.cmd="sudo docker run \
+  --volume=/var/run/docker.sock:/var/run/docker.sock:ro \
+  --volume=/:/rootfs:ro \
+  --volume=/var/run:/var/run:ro \
+  --volume=/sys:/sys:ro \
+  --volume=/var/lib/docker/:/var/lib/docker:ro \
+  --volume=/dev/disk/:/dev/disk:ro \
+  --publish=8080:8080 \
+  --detach=true \
+  --name=elasticsearch \
+  jmb12686/elasticsearch:latest"
 ENV ELASTIC_CONTAINER true
 
 RUN for iter in {1..10}; \
@@ -77,8 +102,6 @@ RUN chgrp 0 /usr/local/bin/docker-entrypoint.sh && chmod g=u /etc/passwd && chmo
 	&& ln -sf /etc/pki/ca-trust/extracted/java/cacerts /usr/share/elasticsearch/jdk/lib/security/cacerts
 
 EXPOSE 9200 9300
-
-LABEL org.label-schema.build-date="2019-12-16T22:57:37.839371Z"   org.label-schema.license="Elastic-License"   org.label-schema.name="Elasticsearch"   org.label-schema.schema-version="1.0"   org.label-schema.url="https://www.elastic.co/products/elasticsearch"   org.label-schema.usage="https://www.elastic.co/guide/en/elasticsearch/reference/index.html"   org.label-schema.vcs-ref="3ae9ac9a93c95bd0cdc054951cf95d88e1e18d96"   org.label-schema.vcs-url="https://github.com/elastic/elasticsearch"   org.label-schema.vendor="Elastic"   org.label-schema.version="7.5.1"   org.opencontainers.image.created="2019-12-16T22:57:37.839371Z"   org.opencontainers.image.documentation="https://www.elastic.co/guide/en/elasticsearch/reference/index.html"   org.opencontainers.image.licenses="Elastic-License"   org.opencontainers.image.revision="3ae9ac9a93c95bd0cdc054951cf95d88e1e18d96"   org.opencontainers.image.source="https://github.com/elastic/elasticsearch"   org.opencontainers.image.title="Elasticsearch"   org.opencontainers.image.url="https://www.elastic.co/products/elasticsearch"   org.opencontainers.image.vendor="Elastic"   org.opencontainers.image.version="7.5.1"
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 # Dummy overridable parameter parsed by entrypoint
