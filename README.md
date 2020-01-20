@@ -1,38 +1,15 @@
 # docker-elasticsearch
 
-Containerized, ARM version of elasticsearch. Compatible with Raspberry Pi
+<p align="center">
+  <a href="https://hub.docker.com/r/jmb12686/elasticsearch/tags?page=1&ordering=last_updated"><img src="https://img.shields.io/github/v/tag/jmb12686/docker-elasticsearch?label=version&style=flat-square" alt="Latest Version"></a>
+  <a href="https://github.com/jmb12686/docker-elasticsearch/actions"><img src="https://github.com/jmb12686/docker-elasticsearch/workflows/build/badge.svg" alt="Build Status"></a>
+  <a href="https://hub.docker.com/r/jmb12686/elasticsearch/"><img src="https://img.shields.io/docker/stars/jmb12686/elasticsearch.svg?style=flat-square" alt="Docker Stars"></a>
+  <a href="https://hub.docker.com/r/jmb12686/elasticsearch/"><img src="https://img.shields.io/docker/pulls/jmb12686/elasticsearch.svg?style=flat-square" alt="Docker Pulls"></a>
+</p>
 
-## How to Build
+Containerized, multiarch version of [Elasticsearch](https://github.com/elastic/elasticsearch).  Designed to be usable within x86-64, armv6, and armv7 based Docker Swarm clusters.  Compatible with all Raspberry Pi models (armv6 + armv7).
 
-Build using `buildx` for multiarchitecture image and manifest support
-
-Setup buildx
-
-```bash
-docker buildx create --name multiarchbuilder
-docker buildx use multiarchbuilder
-docker buildx inspect --bootstrap
-[+] Building 0.0s (1/1) FINISHED
- => [internal] booting buildkit                                                                                                                 5.7s
- => => pulling image moby/buildkit:buildx-stable-1                                                                                              4.6s
- => => creating container buildx_buildkit_multiarchbuilder0                                                                                     1.1s
-Name:   multiarchbuilder
-Driver: docker-container
-
-Nodes:
-Name:      multiarchbuilder0
-Endpoint:  npipe:////./pipe/docker_engine
-Status:    running
-Platforms: linux/amd64, linux/arm64, linux/ppc64le, linux/s390x, linux/386, linux/arm/v7, linux/arm/v6
-```
-
-Build
-
-```bash
-docker buildx build --platform linux/arm -t jmb12686/elasticsearch:latest --push .
-```
-
-## How to Run
+## Usage
 
 Run on a single Docker engine node:
 
@@ -77,4 +54,34 @@ networks:
 volumes:
   filebeat: {}
   elasticsearch-data: {}
+```
+
+## How to manually build
+
+Build using `buildx` for multiarchitecture image and manifest v2 support
+
+Setup buildx
+
+```bash
+docker buildx create --name multiarchbuilder
+docker buildx use multiarchbuilder
+docker buildx inspect --bootstrap
+[+] Building 0.0s (1/1) FINISHED
+ => [internal] booting buildkit                                                                                                                 5.7s
+ => => pulling image moby/buildkit:buildx-stable-1                                                                                              4.6s
+ => => creating container buildx_buildkit_multiarchbuilder0                                                                                     1.1s
+Name:   multiarchbuilder
+Driver: docker-container
+
+Nodes:
+Name:      multiarchbuilder0
+Endpoint:  npipe:////./pipe/docker_engine
+Status:    running
+Platforms: linux/amd64, linux/arm64, linux/ppc64le, linux/s390x, linux/386, linux/arm/v7, linux/arm/v6
+```
+
+Build
+
+```bash
+docker buildx build --platform linux/arm,linux/amd64 -t jmb12686/elasticsearch:latest --push .
 ```

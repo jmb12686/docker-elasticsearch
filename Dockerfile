@@ -14,19 +14,28 @@
 FROM centos:7 AS builder
 
 ENV VERSION 7.4.1
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
 ENV PATH /usr/share/elasticsearch/bin:$PATH
 
 RUN groupadd -g 1000 elasticsearch &&     adduser -u 1000 -g 1000 -d /usr/share/elasticsearch elasticsearch
 
 WORKDIR /usr/share/elasticsearch
 
+#################################################################################
+# Determine target image architecture and download proper version of JDK
+# 
+# Only linux/arm and linux/amd64 Docker architectures are supported at this time
+#################################################################################
+RUN set -eo pipefail && \
+  echo ${TARGETPLATFORM} && \
+  if [ "${TARGETPLATFORM}" = "linux/arm/v7" ] ; then JDK_ARCH="arm" ; elif [ "${TARGETPLATFORM}" = "linux/amd64" ] ; then JDK_ARCH="x64" ; else echo "TARGETPLATFORM of ${TARGETPLATFORM} is not supported!" && exit -1 ; fi  && \
+  cd /opt && curl --retry 8 -s -L -o openjdk.tar.gz https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.6%2B10/OpenJDK11U-jdk_${JDK_ARCH}_linux_hotspot_11.0.6_10.tar.gz && cd -
 RUN cd /opt && curl --retry 8 -s -L -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-${VERSION}-no-jdk-linux-x86_64.tar.gz -# && cd -
-RUN cd /opt && curl --retry 8 -s -L -O https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.6%2B10/OpenJDK11U-jdk_arm_linux_hotspot_11.0.6_10.tar.gz && cd -
 
 RUN tar zxf /opt/elasticsearch-${VERSION}-no-jdk-linux-x86_64.tar.gz --strip-components=1
-# RUN rm -rf /usr/share/elasticsearch/jdk/*
 RUN mkdir jdk
-RUN tar zxf /opt/OpenJDK11U-jdk_arm_linux_hotspot_11.0.6_10.tar.gz -C jdk --strip-components=1
+RUN tar zxf /opt/openjdk.tar.gz -C jdk --strip-components=1
 
 RUN rm -rf /usr/share/elasticsearch/jdk/lib/src.zip && rm -rf /usr/share/elasticsearch/jdk/demo
 
@@ -50,24 +59,18 @@ ARG VERSION
 LABEL maintainer="John Belisle" \
   org.label-schema.build-date=$BUILD_DATE \
   org.label-schema.name="elasticsearch" \
-  org.label-schema.description="Containerized, ARM version of elasticsearch.  Compatible with all Raspberry Pi models (armv6 + armv7) and linux/amd64." \
+  org.label-schema.description="Containerized, multiarch version of Elasticsearch.  Compatible with all Raspberry Pi models (armv6 + armv7) and linux/amd64." \
   org.label-schema.version=$VERSION \
   org.label-schema.url="https://github.com/jmb12686/docker-elasticsearch" \
   org.label-schema.vcs-ref=$VCS_REF \
   org.label-schema.vcs-url="https://github.com/jmb12686/docker-elasticsearch" \
   org.label-schema.vendor="jmb12686" \
   org.label-schema.schema-version="1.0" \
-  org.label-schema.docker.cmd="sudo docker run \
-  --volume=/var/run/docker.sock:/var/run/docker.sock:ro \
-  --volume=/:/rootfs:ro \
-  --volume=/var/run:/var/run:ro \
-  --volume=/sys:/sys:ro \
-  --volume=/var/lib/docker/:/var/lib/docker:ro \
-  --volume=/dev/disk/:/dev/disk:ro \
-  --publish=8080:8080 \
-  --detach=true \
-  --name=elasticsearch \
-  jmb12686/elasticsearch:latest"
+  org.label-schema.docker.cmd="sudo docker run --rm \
+  -e 'ES_JAVA_OPTS=-Xmx256m -Xms256m' \
+  -e 'discovery.type=single-node' \
+  -v ${PWD}/config/example/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml \
+  jmb12686/elasticsearch"
 ENV ELASTIC_CONTAINER true
 
 RUN for iter in {1..10}; \
