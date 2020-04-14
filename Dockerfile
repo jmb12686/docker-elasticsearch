@@ -25,11 +25,11 @@ WORKDIR /usr/share/elasticsearch
 #################################################################################
 # Determine target image architecture and download proper version of JDK
 # 
-# Only linux/arm and linux/amd64 Docker architectures are supported at this time
+# Only linux/arm, linux/arm64, and linux/amd64 Docker architectures are supported at this time
 #################################################################################
 RUN set -eo pipefail && \
   echo ${TARGETPLATFORM} && \
-  if [ "${TARGETPLATFORM}" = "linux/arm/v7" ] ; then JDK_ARCH="arm" ; elif [ "${TARGETPLATFORM}" = "linux/amd64" ] ; then JDK_ARCH="x64" ; else echo "TARGETPLATFORM of ${TARGETPLATFORM} is not supported!" && exit -1 ; fi  && \
+  if [ "${TARGETPLATFORM}" = "linux/arm/v7" ] ; then JDK_ARCH="arm" ; elif [ "${TARGETPLATFORM}" = "linux/arm64" ] ; then JDK_ARCH="aarch64" ; elif [ "${TARGETPLATFORM}" = "linux/amd64" ] ; then JDK_ARCH="x64" ; else echo "TARGETPLATFORM of ${TARGETPLATFORM} is not supported!" && exit -1 ; fi  && \
   cd /opt && curl --retry 8 -s -L -o openjdk.tar.gz https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.6%2B10/OpenJDK11U-jdk_${JDK_ARCH}_linux_hotspot_11.0.6_10.tar.gz && cd -
 RUN cd /opt && curl --retry 8 -s -L -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-${VERSION}-no-jdk-linux-x86_64.tar.gz -# && cd -
 
